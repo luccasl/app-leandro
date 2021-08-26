@@ -1,0 +1,54 @@
+version: "3.7"
+services:
+  nodejs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - "3000"
+    scale: 3
+    restart: unless-stopped
+    working_dir: /app
+    networks:
+      - app-leandro
+    volumes:
+      - ./:/app
+      - /app/node_modules
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - nodejs
+    ports:
+      - "80:80"
+    networks:
+      - app-leandro
+
+  mongo:
+    image: mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: toor
+    networks:
+      - app-leandro
+
+  mongo-express:
+    image: mongo-express
+    restart: unless-stopped
+    expose:
+      - "8081"
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSER: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: toor
+      ME_CONFIG_MONGODB_URL: mongodb://root:toor@mongo:27017/
+    networks:
+      - app-leandro
+
+networks:
+  app-leandro:
+    driver: bridge
